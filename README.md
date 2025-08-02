@@ -96,32 +96,6 @@ go_templete/
 
 The server will start on `http://localhost:8080` (or the port specified in your `.env` file).
 
-## 🔧 Configuration
-
-### Using Docker (Recommended)
-
-1. **Build the Docker image**
-   ```bash
-   docker build -t go-fiber-template .
-   ```
-
-2. **Run the container**
-   ```bash
-   docker run -p 8080:8080 --env-file .env go-fiber-template
-   ```
-
-### Manual Deployment
-
-1. **Build the binary**
-   ```bash
-   go build -o go-fiber-template-db main.go
-   ```
-
-2. **Run the application**
-   ```bash
-   ./go-fiber-template
-   ```
-
 ## 📦 Dependencies
 
 ### Main Dependencies
