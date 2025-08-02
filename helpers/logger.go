@@ -2,8 +2,8 @@ package helpers
 
 import (
 	"fmt"
-	"garma_track/models"
-	"garma_track/requests"
+	"go-fiber-template/models"
+	"go-fiber-template/requests"
 	"io"
 	"os"
 	"path/filepath"

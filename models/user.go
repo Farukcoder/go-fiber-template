@@ -2,9 +2,11 @@ package models
 
 import (
 	"time"
+
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
+
 type UserType string
 
 const (
@@ -19,7 +21,7 @@ type User struct {
 	Email     string         `gorm:"uniqueIndex;not null" json:"email"`
 	Password  string         `gorm:"not null" json:"-"`
 	Name      string         `json:"name"`
-	UserType  UserType       `gorm:"type:varchar(20);not null" json:"user_type"`
+	UserType  UserType       `gorm:"type:varchar(20);not null;default:'employee'" json:"user_type"`
 	IsActive  bool           `gorm:"default:true" json:"is_active"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`

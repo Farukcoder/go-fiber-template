@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"garma_track/helpers"
+	"go-fiber-template/helpers"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"

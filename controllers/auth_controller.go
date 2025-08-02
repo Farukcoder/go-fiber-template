@@ -1,9 +1,9 @@
 package controllers
 
 import (
-	"garma_track/helpers"
-	"garma_track/models"
-	"garma_track/requests"
+	"go-fiber-template/helpers"
+	"go-fiber-template/models"
+	"go-fiber-template/requests"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -63,6 +63,23 @@ func (ac *AuthController) Register(c *fiber.Ctx) error {
 		Name:     input.Name,
 		Email:    input.Email,
 		Password: input.Password,
+		UserType: models.Employee, // Default user type
+	}
+
+	// Set user type if provided
+	if input.UserType != "" {
+		switch input.UserType {
+		case "system_admin":
+			user.UserType = models.SystemAdmin
+		case "garments_admin":
+			user.UserType = models.GarmentsAdmin
+		case "department_admin":
+			user.UserType = models.DepartmentAdmin
+		case "employee":
+			user.UserType = models.Employee
+		default:
+			user.UserType = models.Employee
+		}
 	}
 
 	if err := user.HashPassword(); err != nil {

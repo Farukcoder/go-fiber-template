@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"garma_track/database"
-	"garma_track/helpers"
-	"garma_track/middleware"
-	"garma_track/routes"
+	"go-fiber-template/database"
+	"go-fiber-template/helpers"
+	"go-fiber-template/middleware"
+	"go-fiber-template/routes"
 	"os"
 	"strings"
 	"time"

@@ -3,7 +3,7 @@ package middleware
 import (
 	"time"
 
-	"garma_track/helpers"
+	"go-fiber-template/helpers"
 
 	"github.com/gofiber/fiber/v2"
 )

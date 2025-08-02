@@ -62,7 +62,7 @@ func LogRequest(method, path, ip, userAgent string, status int, duration time.Du
 	// Create a more readable console output
 	var statusColor string
 	var statusIcon string
-	
+
 	switch {
 	case status >= 200 && status < 300:
 		statusColor = "✅"
@@ -80,24 +80,24 @@ func LogRequest(method, path, ip, userAgent string, status int, duration time.Du
 		statusColor = "❓"
 		statusIcon = "UNKNOWN"
 	}
-	
+
 	// Console output with colors and formatting
-	consoleMessage := fmt.Sprintf("%s [%s] %s %s - %d (%s) - %s - %v", 
-		statusColor, 
+	consoleMessage := fmt.Sprintf("%s [%s] %s %s - %d (%s) - %s - %v",
+		statusColor,
 		time.Now().Format("15:04:05"),
-		method, 
-		path, 
-		status, 
+		method,
+		path,
+		status,
 		statusIcon,
-		ip, 
+		ip,
 		duration)
-	
+
 	// File output (original format)
 	fileMessage := fmt.Sprintf("[HTTP] %s %s - %d - %s - %s - %v", method, path, status, ip, userAgent, duration)
-	
+
 	// Log to console with custom formatting
 	fmt.Println(consoleMessage)
-	
+
 	// Also log to file using the existing logger
 	if status >= 400 {
 		Error(fileMessage, nil)
@@ -122,8 +122,11 @@ func GetAuthUser(c *fiber.Ctx) jwt.MapClaims {
 	if user == nil {
 		return nil
 	}
-	token := user.(*jwt.Token)
-	return token.Claims.(jwt.MapClaims)
+	claims, ok := user.(jwt.MapClaims)
+	if !ok {
+		return nil
+	}
+	return claims
 }
 
 // ExtractBearerToken extracts the token from Authorization header

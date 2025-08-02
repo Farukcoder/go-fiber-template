@@ -2,8 +2,8 @@ package database
 
 import (
 	"fmt"
-	"garma_track/helpers"
-	"garma_track/models"
+	"go-fiber-template/helpers"
+	"go-fiber-template/models"
 	"time"
 
 	"gorm.io/gorm"
@@ -52,6 +52,7 @@ func (m *DynamicMigrator) ExecuteMigrations(operations []MigrationOperation) err
 	// Auto-migrate the models
 	if err := m.db.AutoMigrate(
 		&models.User{},
+		&models.Log{},
 		// Add other models here as needed
 	); err != nil {
 		helpers.Error("Failed to execute migrations: %v", err)

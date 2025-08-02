@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"garma_track/controllers"
-	"garma_track/middleware"
+	"go-fiber-template/controllers"
+	"go-fiber-template/middleware"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"

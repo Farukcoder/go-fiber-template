@@ -1,4 +1,4 @@
-module garma_track
+module go-fiber-template
 
 go 1.23.0
 

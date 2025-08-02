@@ -2,10 +2,9 @@ package database
 
 import (
 	"fmt"
+	"go-fiber-template/helpers"
 	"os"
 	"time"
-
-	"garma_track/helpers"
 )
 
 // RunDynamicMigration runs and applies migrations
