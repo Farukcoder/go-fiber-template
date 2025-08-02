@@ -154,6 +154,12 @@ func Error(format string, err error) {
 	}
 }
 
+// Success logs a success level message
+func Success(format string, v ...interface{}) {
+	message := fmt.Sprintf(format, v...)
+	log.Info("✅ " + message)
+}
+
 // Debug logs a debug level message
 func Debug(format string, v ...interface{}) {
 	if os.Getenv("GO_ENV") != "production" {

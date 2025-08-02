@@ -17,12 +17,6 @@ type Response struct {
 	Errors  []string    `json:"errors,omitempty"`
 }
 
-// Success logs a success message with green color in console
-func Success(format string, v ...interface{}) {
-	message := fmt.Sprintf(format, v...)
-	Info("✅ " + message)
-}
-
 // GenerateJWTToken generates a new JWT token for a user
 func GenerateJWTToken(userID uint, email string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{

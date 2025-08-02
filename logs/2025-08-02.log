@@ -1,3 +1,16 @@
-2025/08/02 10:55:55.995024 logger.go:139: [Info] ✨ Connecting to database...
-2025/08/02 10:55:56.013822 logger.go:151: [Error] ❌ Failed to connect to database: %v: failed to connect to `user=go-fiber-template-db-user database=go-fiber-template-db`: [::1]:7004 (localhost): failed SASL auth: FATAL: password authentication failed for user "go-fiber-template-db-user" (SQLSTATE 28P01)
-2025/08/02 10:55:56.014345 logger.go:151: [Error] ❌ ❌ Could not connect to database: %v: failed to connect to `user=go-fiber-template-db-user database=go-fiber-template-db`: [::1]:7004 (localhost): failed SASL auth: FATAL: password authentication failed for user "go-fiber-template-db-user" (SQLSTATE 28P01)
+2025/08/02 12:09:20.863386 logger.go:167: [Debug] 🐛 DSN: host=localhost port=7004 user=go-fiber-template-user password=u5E3234kfQfhusf34K2e dbname=go-fiber-template-db sslmode=disable
+2025/08/02 12:09:20.890251 logger.go:160: [Info] ✅ Successfully connected to the database
+2025/08/02 12:09:20.930194 logger.go:160: [Info] ✅ All dynamic migrations completed successfully
+2025/08/02 12:09:20.930194 logger.go:160: [Info] ✅ All foreign key constraints created successfully
+2025/08/02 12:09:21.240173 logger.go:160: [Info] ✅ All indexes created successfully
+2025/08/02 12:09:21.240173 logger.go:160: [Info] ✅ 🚀 Server is running on http://localhost:3001
+2025/08/02 12:09:21.240173 logger.go:160: [Info] ✅ 
+	******************************************************************************************
+2025/08/02 12:10:06.713394 logger.go:167: [Debug] 🐛 DSN: host=localhost port=7004 user=go-fiber-template-user password=u5E3234kfQfhusf34K2e dbname=go-fiber-template-db sslmode=disable
+2025/08/02 12:10:06.737291 logger.go:160: [Info] ✅ Successfully connected to the database
+2025/08/02 12:10:06.870367 logger.go:160: [Info] ✅ All dynamic migrations completed successfully
+2025/08/02 12:10:06.870367 logger.go:160: [Info] ✅ All foreign key constraints created successfully
+2025/08/02 12:10:06.872117 logger.go:160: [Info] ✅ All indexes created successfully
+2025/08/02 12:10:06.872785 logger.go:160: [Info] ✅ 🚀 Server is running on http://localhost:3001
+2025/08/02 12:10:06.872785 logger.go:160: [Info] ✅ 
+	******************************************************************************************

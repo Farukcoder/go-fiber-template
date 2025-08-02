@@ -20,6 +20,7 @@ type User struct {
 	ID        uint           `gorm:"primarykey" json:"id"`
 	Email     string         `gorm:"uniqueIndex;not null" json:"email"`
 	Password  string         `gorm:"not null" json:"-"`
+	Phone	 string          `gorm:"uniqueIndex;not null" json:"phone"`
 	Name      string         `json:"name"`
 	UserType  UserType       `gorm:"type:varchar(20);not null;default:'employee'" json:"user_type"`
 	IsActive  bool           `gorm:"default:true" json:"is_active"`
