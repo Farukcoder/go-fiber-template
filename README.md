@@ -1,4 +1,4 @@
-# Garma Track - Go Fiber API Template
+#Go Fiber API Template
 
 A robust and scalable Go API template built with Fiber framework, featuring authentication, database management, logging, and middleware support. This template provides a solid foundation for building production-ready REST APIs.
 
