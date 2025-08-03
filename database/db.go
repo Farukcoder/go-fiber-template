@@ -36,8 +36,6 @@ func InitDB() (*gorm.DB, error) {
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		host, port, user, password, database, sslmode)
 
-	helpers.Debug("DSN: %s", dsn)
-
 	var err error
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -46,36 +44,26 @@ func InitDB() (*gorm.DB, error) {
 	}
 	helpers.Success("Successfully connected to the database")
 
-	// Use dynamic migration system instead of simple AutoMigrate
-	migrator := NewDynamicMigrator(DB)
-
-	// Detect schema changes
-	operations, err := migrator.DetectChanges()
-	if err != nil {
-		helpers.Error("Failed to detect schema changes", err)
+	// Run model-wise migrations serially
+	if err := RunSerialMigrations(DB); err != nil {
+		helpers.Error("Failed to run migrations", err)
 		return nil, err
 	}
-
-	// Execute migrations
-	if err := migrator.ExecuteMigrations(operations); err != nil {
-		helpers.Error("Failed to execute migrations", err)
-		return nil, err
-	}
-	helpers.Success("All dynamic migrations completed successfully")
 
 	// Handle foreign key constraints after migrations
 	if err := createForeignKeyConstraints(); err != nil {
 		helpers.Error("Failed to create foreign key constraints", err)
 		return nil, err
 	}
-	helpers.Success("All foreign key constraints created successfully")
 
 	// Create indexes for better performance
 	if err := createIndexes(); err != nil {
 		helpers.Error("Failed to create indexes", err)
 		return nil, err
 	}
-	helpers.Success("All indexes created successfully")
+
+	// Show final completion message
+	helpers.Success("All migrations completed successfully!")
 
 	return DB, nil
 }
@@ -113,26 +101,84 @@ func autoMigrate() error {
 
 // createIndexes creates additional indexes for better performance
 func createIndexes() error {
-	// User indexes
-	if err := DB.Exec("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)").Error; err != nil {
-		return fmt.Errorf("failed to create user email index: %w", err)
-	}
-	if err := DB.Exec("CREATE INDEX IF NOT EXISTS idx_users_user_type ON users(user_type)").Error; err != nil {
-		return fmt.Errorf("failed to create user user_type index: %w", err)
-	}
-	if err := DB.Exec("CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active)").Error; err != nil {
-		return fmt.Errorf("failed to create user is_active index: %w", err)
+	// Define indexes to create
+	indexes := []struct {
+		Name        string
+		Description string
+		SQL         string
+		CheckSQL    string
+	}{
+		{
+			Name:        "idx_users_email",
+			Description: "User email index",
+			SQL:         "CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)",
+			CheckSQL:    "SELECT COUNT(*) FROM pg_indexes WHERE indexname = 'idx_users_email'",
+		},
+		{
+			Name:        "idx_users_user_type",
+			Description: "User type index",
+			SQL:         "CREATE INDEX IF NOT EXISTS idx_users_user_type ON users(user_type)",
+			CheckSQL:    "SELECT COUNT(*) FROM pg_indexes WHERE indexname = 'idx_users_user_type'",
+		},
+		{
+			Name:        "idx_users_is_active",
+			Description: "User active status index",
+			SQL:         "CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active)",
+			CheckSQL:    "SELECT COUNT(*) FROM pg_indexes WHERE indexname = 'idx_users_is_active'",
+		},
+		{
+			Name:        "idx_logs_method",
+			Description: "Log method index",
+			SQL:         "CREATE INDEX IF NOT EXISTS idx_logs_method ON logs(method)",
+			CheckSQL:    "SELECT COUNT(*) FROM pg_indexes WHERE indexname = 'idx_logs_method'",
+		},
+		{
+			Name:        "idx_logs_status_code",
+			Description: "Log status code index",
+			SQL:         "CREATE INDEX IF NOT EXISTS idx_logs_status_code ON logs(status_code)",
+			CheckSQL:    "SELECT COUNT(*) FROM pg_indexes WHERE indexname = 'idx_logs_status_code'",
+		},
+		{
+			Name:        "idx_logs_created_at",
+			Description: "Log created_at index",
+			SQL:         "CREATE INDEX IF NOT EXISTS idx_logs_created_at ON logs(created_at)",
+			CheckSQL:    "SELECT COUNT(*) FROM pg_indexes WHERE indexname = 'idx_logs_created_at'",
+		},
 	}
 
-	// Log indexes
-	if err := DB.Exec("CREATE INDEX IF NOT EXISTS idx_logs_method ON logs(method)").Error; err != nil {
-		return fmt.Errorf("failed to create log method index: %w", err)
+	// Check which indexes need to be created
+	indexesToCreate := []struct {
+		Name        string
+		Description string
+		SQL         string
+		CheckSQL    string
+	}{}
+
+	for _, index := range indexes {
+		var count int64
+		err := DB.Raw(index.CheckSQL).Scan(&count).Error
+		if err != nil || count == 0 {
+			indexesToCreate = append(indexesToCreate, index)
+		}
 	}
-	if err := DB.Exec("CREATE INDEX IF NOT EXISTS idx_logs_status_code ON logs(status_code)").Error; err != nil {
-		return fmt.Errorf("failed to create log status_code index: %w", err)
+
+	// If no indexes need to be created, return silently
+	if len(indexesToCreate) == 0 {
+		return nil
 	}
-	if err := DB.Exec("CREATE INDEX IF NOT EXISTS idx_logs_created_at ON logs(created_at)").Error; err != nil {
-		return fmt.Errorf("failed to create log created_at index: %w", err)
+
+	// Create indexes silently, only log errors
+	errorCount := 0
+
+	for _, index := range indexesToCreate {
+		if err := DB.Exec(index.SQL).Error; err != nil {
+			helpers.Error(fmt.Sprintf("Failed to create %s", index.Description), err)
+			errorCount++
+		}
+	}
+
+	if errorCount > 0 {
+		return fmt.Errorf("index creation completed with %d errors", errorCount)
 	}
 
 	return nil
@@ -142,16 +188,24 @@ func createIndexes() error {
 func createForeignKeyConstraints() error {
 	// Define constraints with their names for checking existence
 	constraints := []struct {
-		name string
-		sql  string
+		name        string
+		description string
+		sql         string
 	}{
 		// Add foreign key constraints here as needed
 		// Example:
 		// {
 		//     name: "fk_orders_user_id",
+		//     description: "Orders user foreign key constraint",
 		//     sql:  "ALTER TABLE orders ADD CONSTRAINT fk_orders_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE",
 		// },
 	}
+
+	if len(constraints) == 0 {
+		return nil
+	}
+
+	errorCount := 0
 
 	for _, constraint := range constraints {
 		// Check if constraint already exists
@@ -164,19 +218,21 @@ func createForeignKeyConstraints() error {
 
 		err := DB.Raw(checkSQL, constraint.name).Scan(&exists).Error
 		if err != nil {
-			helpers.Warning("Failed to check constraint existence: %s - Error: %v", constraint.name, err)
+			helpers.Error(fmt.Sprintf("Failed to check constraint existence: %s", constraint.name), err)
+			errorCount++
 			continue
 		}
 
 		if !exists {
 			if err := DB.Exec(constraint.sql).Error; err != nil {
-				helpers.Warning("Failed to create constraint: %s - Error: %v", constraint.name, err)
-			} else {
-				helpers.Success("Successfully created constraint: %s", constraint.name)
+				helpers.Error(fmt.Sprintf("Failed to create constraint: %s", constraint.name), err)
+				errorCount++
 			}
-		} else {
-			helpers.Debug("Constraint already exists: %s", constraint.name)
 		}
+	}
+
+	if errorCount > 0 {
+		return fmt.Errorf("constraint creation completed with %d errors", errorCount)
 	}
 
 	return nil

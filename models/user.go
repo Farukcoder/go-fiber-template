@@ -24,6 +24,7 @@ type User struct {
 	Name      string         `json:"name"`
 	UserType  UserType       `gorm:"type:varchar(20);not null;default:'employee'" json:"user_type"`
 	IsActive  bool           `gorm:"default:true" json:"is_active"`
+	Avatar    string         `gorm:"default:'default-avatar.png'" json:"avatar"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"go-fiber-template/helpers"
 	"go-fiber-template/models"
 
 	"gorm.io/gorm"
@@ -95,6 +96,186 @@ func getRegisteredModels() []ModelInfo {
 	}
 
 	return modelInfos
+}
+
+// RunSerialMigrations runs migrations for each model serially with detailed logging
+func RunSerialMigrations(db *gorm.DB) error {
+	// Define models in migration order (dependencies first)
+	modelMigrations := []struct {
+		Name  string
+		Model interface{}
+	}{
+		{"User", &models.User{}},
+		{"Log", &models.Log{}},
+		// Add other models here in dependency order
+	}
+
+	// Check which models need migration and what type of migration
+	modelsToMigrate := []struct {
+		Name          string
+		Model         interface{}
+		MigrationType string // "new", "update"
+	}{}
+
+	for _, migration := range modelMigrations {
+		migrationType := getMigrationType(db, migration.Model, migration.Name)
+		if migrationType != "" {
+			modelsToMigrate = append(modelsToMigrate, struct {
+				Name          string
+				Model         interface{}
+				MigrationType string
+			}{
+				Name:          migration.Name,
+				Model:         migration.Model,
+				MigrationType: migrationType,
+			})
+		}
+	}
+
+	// If no models need migration, show general message
+	if len(modelsToMigrate) == 0 {
+		helpers.Success("All migrations are up to date")
+		return nil
+	}
+
+	// Migrate models and show individual success messages based on type
+	errorCount := 0
+
+	for _, migration := range modelsToMigrate {
+		err := db.AutoMigrate(migration.Model)
+		if err != nil {
+			helpers.Error(fmt.Sprintf("%s migration failed", migration.Name), err)
+			errorCount++
+		} else {
+			if migration.MigrationType == "new" {
+				helpers.Success("%s migration completed successfully", migration.Name)
+			} else if migration.MigrationType == "update" {
+				helpers.Success("%s migration updated successfully", migration.Name)
+			}
+		}
+	}
+
+	if errorCount > 0 {
+		return fmt.Errorf("migration completed with %d errors", errorCount)
+	}
+
+	return nil
+}
+
+// getMigrationType determines what type of migration is needed for a model
+func getMigrationType(db *gorm.DB, model interface{}, modelName string) string {
+	// Get table name from GORM
+	stmt := &gorm.Statement{DB: db}
+	stmt.Parse(model)
+	tableName := stmt.Schema.Table
+
+	// Check if table exists
+	if !db.Migrator().HasTable(tableName) {
+		return "new" // Table doesn't exist, it's a new migration
+	}
+
+	// Get current table columns
+	columnTypes, err := db.Migrator().ColumnTypes(tableName)
+	if err != nil {
+		return "update" // Error getting columns, assume update needed
+	}
+
+	// Create a map of existing columns
+	existingColumns := make(map[string]bool)
+	for _, col := range columnTypes {
+		existingColumns[col.Name()] = true
+	}
+
+	// Check if all model fields exist as columns
+	modelType := reflect.TypeOf(model).Elem()
+	for i := 0; i < modelType.NumField(); i++ {
+		field := modelType.Field(i)
+
+		// Skip unexported fields
+		if !field.IsExported() {
+			continue
+		}
+
+		// Skip embedded structs (like gorm.Model)
+		if field.Anonymous {
+			continue
+		}
+
+		gormTag := field.Tag.Get("gorm")
+
+		// Skip fields marked with gorm:"-" or association fields
+		if gormTag == "-" || isGormAssociationField(field, gormTag) {
+			continue
+		}
+
+		// Get column name
+		columnName := getFieldName(field.Name, gormTag)
+
+		// If column doesn't exist, it's an update
+		if !existingColumns[columnName] {
+			return "update"
+		}
+	}
+
+	return "" // No migration needed
+}
+
+// needsMigration checks if a model needs migration by comparing table structure
+func needsMigration(db *gorm.DB, model interface{}, modelName string) bool {
+	// Get table name from GORM
+	stmt := &gorm.Statement{DB: db}
+	stmt.Parse(model)
+	tableName := stmt.Schema.Table
+
+	// Check if table exists
+	if !db.Migrator().HasTable(tableName) {
+		return true // Table doesn't exist, needs migration
+	}
+
+	// Get current table columns
+	columnTypes, err := db.Migrator().ColumnTypes(tableName)
+	if err != nil {
+		return true // Error getting columns, assume needs migration
+	}
+
+	// Create a map of existing columns
+	existingColumns := make(map[string]bool)
+	for _, col := range columnTypes {
+		existingColumns[col.Name()] = true
+	}
+
+	// Check if all model fields exist as columns
+	modelType := reflect.TypeOf(model).Elem()
+	for i := 0; i < modelType.NumField(); i++ {
+		field := modelType.Field(i)
+
+		// Skip unexported fields
+		if !field.IsExported() {
+			continue
+		}
+
+		// Skip embedded structs (like gorm.Model)
+		if field.Anonymous {
+			continue
+		}
+
+		gormTag := field.Tag.Get("gorm")
+
+		// Skip fields marked with gorm:"-" or association fields
+		if gormTag == "-" || isGormAssociationField(field, gormTag) {
+			continue
+		}
+
+		// Get column name
+		columnName := getFieldName(field.Name, gormTag)
+
+		// If column doesn't exist, migration is needed
+		if !existingColumns[columnName] {
+			return true
+		}
+	}
+
+	return false // No migration needed
 }
 
 // GetRegisteredModels is a public wrapper for getRegisteredModels
